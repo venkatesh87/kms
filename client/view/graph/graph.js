@@ -222,6 +222,7 @@ Self.prototype._enterNodes = function () {
   this._enteredNodes
     .classed(`${this.selectors.node.slice(1)} ${this.selectors.hidden.slice(1)}`, true)
     .classed(this.selectors.selected.slice(1), key => _.includes(this.selection.getAll(), key))
+    .attr('data-id', (d) => d)
   this._enteredNodes
     .append('circle')
     .attr('r', this.p.node.size.width / 2)
