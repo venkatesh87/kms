@@ -24,7 +24,7 @@
   "scripts": {
     "build": "webpack --env.prod",
     "build:clean": "rm -rf build/* && yarn run build",
-    "start": "NODE_ENV=DEV babel-node server/instance.js",
+    "dev": "NODE_ENV=DEV babel-node server/instance.js --content-base build --hot --inline",
     "lint": "eslint .",
     "doc": "jsdoc src -r -d docs",
     "test": "mocha test/unit"

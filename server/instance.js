@@ -3,6 +3,7 @@
  */
 import webpack from 'webpack'
 import webpackMiddleware from 'webpack-dev-middleware'
+import webpackHotMiddleware from 'webpack-hot-middleware'
 import express from 'express'
 import Path from 'path'
 import bodyParser from 'body-parser'
@@ -41,23 +42,32 @@ class Server {
 
   initRoutes (req, res) {
     if (process.env.NODE_ENV === 'DEV') {
-      const webpackOptions = {
-        entry: './client/app.js',
-        output: {
-          path: '/',
-        }
-      }
-      const wmOptions = {
-        index: 'client/index.html',
+      const compiler = webpack(webpackConfig())
+      const hotMiddlewareOptions = {
+        index: 'index.html',
         publicPath: '/',
       }
-      this.server.use(webpackMiddleware(webpack(webpackConfig()), wmOptions))
+      const hotMiddleware = webpackMiddleware(compiler, hotMiddlewareOptions)
+      this.server.use(hotMiddleware)
+
+      // force page reload when html-webpack-plugin template changes
+      compiler.plugin('compilation', function (compilation) {
+        compilation.plugin('html-webpack-plugin-after-emit', function (data, cb) {
+          hotMiddleware.publish({ action: 'reload' })
+          cb()
+        })
+      })
+
+      this.server.use(webpackHotMiddleware(compiler))
+      this.server.get('/', this._onRootRequest.bind(this))
+      this.server.post(/item/, upload.array(), this._onAppRequest.bind(this))
+      this.server.get(/^(.+)$/, this._onOtherRequest.bind(this))
     } else {
+      this.server.get('/', this._onRootRequest.bind(this))
       this.server.get(/build*/, this._onResourceRequest.bind(this))
+      this.server.post(/item/, upload.array(), this._onAppRequest.bind(this))
+      this.server.get(/^(.+)$/, this._onOtherRequest.bind(this))
     }
-    this.server.get('/', this._onRootRequest.bind(this))
-    this.server.post(/item/, upload.array(), this._onAppRequest.bind(this))
-    this.server.get(/^(.+)$/, this._onOtherRequest.bind(this))
   }
 
   _onRootRequest (req, res) {
