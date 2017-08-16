@@ -77,7 +77,7 @@ export default class Self {
   searchTags (query) {
     return new Promise((resolve, reject) => {
       const tagKeys = this.graph.search(this.serviceItem.tag, query, 'g')
-      const serviceKeys = _.keys(this.serviceItem)
+      const serviceKeys = _.values(this.serviceItem)
       _.pullAll(tagKeys, serviceKeys)
 
       const data = _.map(tagKeys, key => ({ id: key, text: this.graph.get(key) }))
