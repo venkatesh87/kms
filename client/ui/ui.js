@@ -6,6 +6,7 @@ import Actionman from './actionman'
 import GraphView from '../view/graph/graph'
 import ListView from '../view/list/list'
 import Editor from '../view/editor/editor'
+import Search from './search/search'
 import Menu from './main-menu/menu'
 import ActionsPanel from './actions-panel/panel'
 
@@ -44,6 +45,12 @@ export default class UI {
       selection: this.selection,
       hidden: true,
     }
+    const searchResultViewSet = {
+      actionman: this.actionman,
+      container: this.elements.viewContainer,
+      selection: this.selection,
+      hidden: true,
+    }
     const editorSet = {
       actionman: this.actionman,
       container: this.elements.viewContainer,
@@ -57,6 +64,11 @@ export default class UI {
     this.linkedList.on('hide', this._layoutViews.bind(this))
     this.linkedList.on('toogleSize', this._toogleViewsSize.bind(this))
 
+    this.searchResultList = new ListView(searchResultViewSet)
+    this.searchResultList.on('show', this._layoutViews.bind(this))
+    this.searchResultList.on('hide', this._layoutViews.bind(this))
+    this.searchResultList.on('toogleSize', this._toogleViewsSize.bind(this))
+
     this.editor = new Editor(editorSet)
     this.editor.on('hide', () => {
       this.actionman.get('itemSave').apply()
@@ -64,6 +76,8 @@ export default class UI {
     this.editor.on('show', this._layoutViews.bind(this))
     this.editor.on('hide', this._layoutViews.bind(this))
     this.editor.on('toogleSize', this._toogleViewsSize.bind(this))
+
+    this.search = new Search({ container: this.elements.header })
 
     this.actionsPanel = new ActionsPanel({
       container: this.elements.sidebar,

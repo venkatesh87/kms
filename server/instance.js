@@ -55,6 +55,8 @@ class Server {
     }
     this.server.get('/', this._onRootRequest.bind(this))
     this.server.post(/item/, upload.array(), this._onAPIRequest.bind(this))
+    this.server.post(/find/, upload.array(), this._onAppRequest.bind(this))
+    this.server.get(/tags/, this._onAppSelectInit.bind(this))
     this.server.get(/^(.+)$/, this._onOtherRequest.bind(this))
   }
 
@@ -68,6 +70,21 @@ class Server {
 
   _on3dpartyRequest (req, res) {
     res.sendFile(Path.join(this.p.app.path, '..', req.path))
+  }
+
+  _onAppRequest (req, res) {
+    this.app[req.body.method](req.body.args)
+      .then((data) => {
+        res.send(data)
+      })
+  }
+
+  _onAppSelectInit (req, res) {
+    const query = req.query.q
+    this.app.searchTags(query)
+      .then((data) => {
+        res.send(JSON.stringify(data))
+      })
   }
 
   _onAPIRequest (req, res) {

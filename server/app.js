@@ -33,7 +33,6 @@ export default class Self {
   }
 
   _initServiceItems () {
-    const serviceGraph = this.graph.getGraph(this.rootKey, 1)
     _.each(this._serviceItems.concat(this._itemtypes), (item) => {
       this.serviceItem[item] = this.graph.search(this.rootKey, item)[0]
     })
@@ -46,32 +45,20 @@ export default class Self {
   findNodesByTags (p) {
     return new Promise((resolve, reject) => {
       const args = JSON.parse(p)
-      const tagsAnd = Util.pluralize(args.tagsAnd)
       const tagsOr = Util.pluralize(args.tagsOr)
       const serviceKeys = this.graph.find(this.rootKey)
       const itemsMap = {}
-      let arrLinkedKeysOr = []
-      let arrLinkedKeysAnd = []
+      let arrLinkedKeys = []
 
       if (tagsOr.length > 0) {
         const tags = []
         _.each(tagsOr, (value) => {
           tags.push(this.graph.search(this.serviceItem.tag, value, 'g')[0])
         })
-        arrLinkedKeysOr = _.map(tags, key => this.graph.getLinked(key))
-        arrLinkedKeysOr = _.intersection(...arrLinkedKeysOr)
+        arrLinkedKeys = _.map(tags, key => this.graph.getLinked(key))
+        arrLinkedKeys = _.intersection(...arrLinkedKeys)
       }
 
-      if (tagsAnd.length > 0) {
-        const tags = []
-        _.each(tagsAnd, (value) => {
-          tags.push(this.graph.search(this.serviceItem.tag, value, 'g')[0])
-        })
-        arrLinkedKeysAnd = _.map(tags, key => this.graph.getLinked(key))
-        arrLinkedKeysAnd = _.union(...arrLinkedKeysAnd)
-      }
-
-      const arrLinkedKeys = _.union(arrLinkedKeysOr, arrLinkedKeysAnd)
       _.pullAll(arrLinkedKeys, serviceKeys)
 
       _.each(arrLinkedKeys, (key) => {
