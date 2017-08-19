@@ -1,7 +1,6 @@
 /**
  * Server Instance
  */
-
 import express from 'express'
 import request from 'request'
 import Path from 'path'
@@ -9,7 +8,6 @@ import bodyParser from 'body-parser'
 import multer from 'multer'
 import chalk from 'chalk'
 import App from './app'
-
 
 const upload = multer() // for parsing multipart/form-data
 const config = require('./config.json')
@@ -63,26 +61,20 @@ class Server {
     res.sendFile(Path.join(this.p.app.path, '..', req.path))
   }
 
-  _onAppRequest (req, res) {
-    this.app[req.body.method](req.body.args)
-      .then((data) => {
-        res.send(data)
-      })
+  async _onAppRequest (req, res) {
+    const data = await this.app[req.body.method](req.body.args)
+    res.send(data)
   }
 
-  _onAppSelectInit (req, res) {
+  async _onAppSelectInit (req, res) {
     const query = req.query.q
-    this.app.searchTags(query)
-      .then((data) => {
-        res.send(JSON.stringify(data))
-      })
+    const data = await this.app.searchTags(query)
+    res.send(JSON.stringify(data))
   }
 
-  _onAPIRequest (req, res) {
-    this.app.apiServer.request(req.body)
-      .then((data) => {
-        res.send(data)
-      })
+  async _onAPIRequest (req, res) {
+    const data = await this.app.apiServer.request(req.body)
+    res.send(data)
   }
 
   _onOtherRequest (req, res) {

@@ -2,34 +2,34 @@
  * Server Application
  * perform complex actions delegated from client application
  */
-
 import _ from 'lodash'
 import Util from '../core/util'
 import Raw from '../provider/raw/index'
 import APIServer from '../provider/api.server/index'
 
-export default class Self {
+export default class App {
   constructor (p) {
     this.rootKey = '000000001vGeH72LxVtxKg'
     this._itemtypes = ['tag', 'note']
     this._serviceItems = ['root', 'visibleItem', 'itemtype']
     this.serviceItem = {}
     this.p = p
-
-
     this.provider = Raw
-    this.provider.read(this.p.repository.path)
-      .then((graph) => {
-        this.graph = graph
-        console.info(`Serving items total: ${graph.getItemKeys().length} from ${this.p.source}`)
-        this.apiServer = new APIServer({
-          source: this.p.repository.path,
-          target: this.p.repository.path,
-          graph: this.graph,
-          provider: this.provider,
-        })
-        this._initServiceItems()
-      })
+
+    this.readRepository()
+  }
+
+  async readRepository () {
+    const graph = await this.provider.read(this.p.repository.path)
+    this.graph = graph
+    console.info(`Serving items total: ${graph.getItemKeys().length} from ${this.p.source}`)
+    this.apiServer = new APIServer({
+      source: this.p.repository.path,
+      target: this.p.repository.path,
+      graph,
+      provider: this.provider,
+    })
+    this._initServiceItems()
   }
 
   _initServiceItems () {
@@ -68,7 +68,6 @@ export default class Self {
       resolve(itemsMap)
     })
   }
-
   /**
    * retrieves tags in select2 consumable format by search query
    * @param {String} query
