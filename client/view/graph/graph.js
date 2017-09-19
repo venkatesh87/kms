@@ -23,14 +23,22 @@ import './graph.scss'
  * @inner Array _edges d3 selection of DOM edges
  */
 export default class Graph extends View {
-  constructor (p) {
+  constructor (p, name) {
     super(p)
+    this.graph = {}
+    this.name = name
 
     this.autoLayout = true
     this.actionman = p.actionman
-    this.selection = p.selection
+    this.itemman = p.itemman
+    this.itemman.on('repo:load', this._reload.bind(this))
+    this.itemman.on('item:create', this._addToSelection.bind(this))
+    this.itemman.on('item:associate', this._reload.bind(this))
+    this.itemman.on('item:disassociate', this._reload.bind(this))
+    this.itemman.on('item:remove', this._reload.bind(this))
+    this.itemman.on('item:showChildren', this._reload.bind(this))
 
-    const $html = $(template())
+    const $html = $(template({ name: name }))
     this.setElement($html)
 
     this.p.node = {
@@ -44,17 +52,19 @@ export default class Graph extends View {
         maxLength: 15,
       },
     }
-    this._graph = undefined
 
-    this.canvas = d3.select(this.selectors.canvas)
-    this.svg = d3.select(this.selectors.svg)
+    this.canvas = d3.select(`.${this.name} ${this.selectors.canvas}`)
+    this.svg = d3.select(`.${this.name} ${this.selectors.svg}`)
+
     this.resize()
     this._initLayouts()
     this._initViewActions()
 
     this.selection.on('add', this._onSelect.bind(this))
     this.selection.on('remove', this._onDeselect.bind(this))
-    $(window).on('resize', this.resize.bind(this))
+
+    this.elements.canvas.on('click', this._onClick.bind(this))
+    // $(window).on('resize', this.resize.bind(this))
   }
 
   get selectors () {
@@ -141,12 +151,13 @@ export default class Graph extends View {
       container: this.elements.container,
       nodeSelector: this.selectors.node,
     })
-    this.rectSelectioning = new RectSelectioning({
+    /* this.rectSelectioning = new RectSelectioning({
       selection: this.selection,
       nodes: this._nodes,
       container: this.elements.root,
+      // eventTarget: this.elements.svg,
       eventTarget: this.elements.container,
-    })
+    }) */
   }
 
   /**
@@ -203,7 +214,7 @@ export default class Graph extends View {
    * run current view layout for
    */
   updateLayout (p) {
-    if (this.autoLayout) this.layout.run(p, this._graph)
+    if (this.autoLayout) this.layout.run(p, this.graph)
   }
 
   /**
@@ -309,7 +320,7 @@ export default class Graph extends View {
   }
 
   _getLabel (key) {
-    let value = this._graph.get(key)
+    let value = this.graph.get(key)
     value = value.substr(0, value.indexOf('\n')) || value
     if (value.length > this.p.node.label.maxLength) value = `${value.slice(0, 15)}...`
     return value
@@ -317,6 +328,7 @@ export default class Graph extends View {
 
   _onDrop (targetNode) {
     if (!targetNode) return
+    this.actionman.get('itemLink').enable()
     this.actionman.get('itemLink').apply(targetNode[0].__data__)
   }
 
@@ -325,18 +337,20 @@ export default class Graph extends View {
     _.each(keys, (key) => {
       const node = _.find(this._nodes.merge(this._enteredNodes).nodes(),
         _node => _node.__data__ === key)
-
       const item = node.__data__
-      d3.select(node).append('image')
-        .attr('x', 0)
-        .attr('y', -this.p.node.size.width * 0.68)
-        .attr('width', this.p.node.size.width / 2)
-        .attr('height', this.p.node.size.width / 2)
-        .attr('xlink:href', '/client/view/graph/pin.svg')
 
-      // Fix item to dropped position
-      this.layout.move(item, delta)
-      this.layout.fix(item)
+      if (!node.classList.contains('pin')) {
+        d3.select(node)
+          .classed('pin', true)
+          .append('img')
+          .attr('width', this.p.node.size.width / 2)
+          .attr('height', this.p.node.size.width / 2)
+          .attr('src', '/client/view/graph/pin.svg')
+
+        // Fix item to dropped position
+        this.layout.move(item, delta)
+        this.layout.fix(item)
+      }
     })
     this.updateLayout({ duration: 200 })
   }
@@ -360,6 +374,21 @@ export default class Graph extends View {
   }
 
   _onNodeDblClick (e) {
-    this.actionman.get('itemShowChildren').apply()
+    this.actionman.get('itemShowChildren').apply(e)
+  }
+
+  _addToSelection (key) {
+    this.selection.add(key)
+    this._reload()
+  }
+
+  _onClick () {
+    this.trigger('focus', this.name)
+  }
+
+  async _reload (context = this.graph.context) {
+    this.graph = await this.itemman.reloadGraph(context, 1)
+    this.graph.remove(context)
+    this.render(this.graph, {})
   }
 }

@@ -1,4 +1,4 @@
-import Action from '../../action'
+import Action from '../action'
 
 export default class Unlink extends Action {
   constructor (p) {
@@ -7,13 +7,13 @@ export default class Unlink extends Action {
     this._label = 'Unlink'
     this._icon = 'mdi mdi-link-variant-off'
     this.group = 'item'
-
-    this.registrar.selection.on('change', this.evaluate.bind(this, this.registrar.selection))
   }
 
   _execute () {
-    const keys = this.registrar.selection.getAll()
-    this.registrar.unlinkItems(keys[0], keys[1])
+    const keys = this.registrar.currentView.selection.getAll()
+    const key1 = keys.shift()
+
+    this.registrar.itemman.unlinkItems(key1, keys)
   }
 
   evaluate (selection) {
